@@ -74,18 +74,23 @@ public class ToolBar extends VBox {
         });
 
         toggleMode = new ToolButton("✏ Draw", null);
-        toggleMode.setActive(true);
         toggleMode.setOnAction(e -> {
+            Pane rootPane = (Pane) canvas.getParent();
+
             if (toggleMode.isSelected()) {
                 toggleMode.setText("✏ Draw");
                 toggleMode.setActive(true);
                 canvas.setMouseTransparent(false);
-                Main.setDrawMode(true);
+                if (rootPane != null) {
+                    rootPane.setStyle("-fx-background-color: rgba(255, 255, 255, 0.01);");
+                }
             } else {
                 toggleMode.setText("👁 View");
                 toggleMode.setActive(false);
                 canvas.setMouseTransparent(true);
-                Main.setDrawMode(false);
+                if (rootPane != null) {
+                    rootPane.setStyle("-fx-background-color: transparent;");
+                }
             }
         });
 
