@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import com.easypencil.Widget.FloatingTextBox; // 🌟 เรียกใช้ Widget
+import com.easypencil.Widget.FloatingTextBox;
 import com.easypencil.util.ScreenCaptureUtil;
 
 import javafx.scene.Cursor;
@@ -32,7 +32,6 @@ public class DrawingCanvas extends Pane {
     private boolean textMode = false;
     private boolean highlightMode = false;
 
-    // 🌟 ใช้ Widget ที่เราเพิ่งสร้าง แทนตัวแปรยุ่บยั่บแบบเก่า
     private FloatingTextBox activeTextBox = null;
 
     private Cursor penCursor = Cursor.DEFAULT;
@@ -60,8 +59,6 @@ public class DrawingCanvas extends Pane {
 
     private void loadCursors() {
         try {
-            // ใช้ getClass().getResource() และใส่ / นำหน้า เพื่อให้อ่านไฟล์จาก root ของโฟลเดอร์ resources
-
             String penUrl = getClass().getResource("/asset/pencil.png").toExternalForm();
             Image penImg = new Image(penUrl);
             penCursor = new ImageCursor(penImg, 0, 512);
@@ -79,12 +76,11 @@ public class DrawingCanvas extends Pane {
             eraserCursor = new ImageCursor(eraserImg, eraserImg.getWidth() / 2, eraserImg.getHeight() / 2);
 
         } catch (Exception e) {
-            // พิมพ์ Error ออกมาดูด้วย เผื่อในอนาคตพิมพ์ชื่อไฟล์ผิดจะได้รู้ตัว
-            System.err.println("❌ ไม่สามารถโหลดไฟล์เคอร์เซอร์ได้: " + e.getMessage());
+            System.err.println("ไม่สามารถโหลดไฟล์เคอร์เซอร์ได้: " + e.getMessage());
 
             penCursor = Cursor.CROSSHAIR;
             highlightCursor = Cursor.CROSSHAIR;
-            textCursor = Cursor.TEXT; // เพิ่มตัวสำรองให้ text ด้วยครับ
+            textCursor = Cursor.TEXT;
             eraserCursor = Cursor.CLOSED_HAND;
         }
     }
@@ -96,7 +92,6 @@ public class DrawingCanvas extends Pane {
                     finalizeText();
                     return;
                 }
-                // 🌟 เรียกใช้ Widget FloatingTextBox
                 activeTextBox = new FloatingTextBox(e.getX(), e.getY(), brushColor, brushSize, this::finalizeText);
                 this.getChildren().add(activeTextBox);
                 activeTextBox.focusText();
@@ -160,7 +155,6 @@ public class DrawingCanvas extends Pane {
         }
     }
 
-    // 🌟 ฟังก์ชันประทับตราข้อความ เล็กและสะอาดขึ้นมาก
     private void finalizeText() {
         if (activeTextBox != null && !activeTextBox.getText().trim().isEmpty()) {
             saveSnapshot();
@@ -169,7 +163,6 @@ public class DrawingCanvas extends Pane {
             double fontSize = Math.max(16, brushSize * 4);
             gc.setFont(javafx.scene.text.Font.font("System", javafx.scene.text.FontWeight.BOLD, fontSize));
 
-            // ดึงพิกัดจาก Widget มาประทับตรา
             gc.fillText(activeTextBox.getText(), activeTextBox.getStampX(), activeTextBox.getStampY());
         }
 
@@ -179,7 +172,6 @@ public class DrawingCanvas extends Pane {
         }
     }
 
-    // --- การสลับโหมดเครื่องมือ ---
     public void setPenMode() {
         this.textMode = false;
         this.eraser = false;
@@ -242,7 +234,6 @@ public class DrawingCanvas extends Pane {
         return eraser;
     }
 
-    // 🌟 เรียกใช้ Utility Class ในบรรทัดเดียว!
     public void saveAsPng(File file) {
         ScreenCaptureUtil.saveScreenAsPng(file, this::finalizeText);
     }

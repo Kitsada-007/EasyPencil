@@ -14,13 +14,11 @@ public class FloatingTextBox extends VBox {
     private double dragOffsetY = 0;
     private double fontSize;
 
-    // รับค่า พิกัด X, Y, สี, ขนาดแปรง และคำสั่งที่จะให้ทำตอนกด Enter (Runnable)
     public FloatingTextBox(double x, double y, Color textColor, double brushSize, Runnable onEnterPressed) {
         this.setLayoutX(x);
         this.setLayoutY(y - 24);
         this.fontSize = Math.max(16, brushSize * 4);
 
-        // 🌟 สร้างแถบจับลาก
         Label moveHandle = new Label("✥ ลากตรงนี้เพื่อย้ายตำแหน่ง");
         moveHandle.setStyle("-fx-background-color: rgba(41, 128, 185, 0.9); -fx-text-fill: white; -fx-padding: 3 8; -fx-cursor: move; -fx-font-size: 12px; -fx-background-radius: 6 6 0 0;");
         moveHandle.setMinHeight(24);
@@ -38,7 +36,6 @@ public class FloatingTextBox extends VBox {
             e.consume();
         });
 
-        // 🌟 สร้างช่องพิมพ์ข้อความ
         textArea = new TextArea();
         textArea.setWrapText(false);
 
@@ -55,7 +52,6 @@ public class FloatingTextBox extends VBox {
                 "-fx-border-color: #888; -fx-border-style: dashed; -fx-border-width: 0 1 1 1;"
         );
 
-        // คำนวณขนาดกล่องตามตัวอักษร
         Text textMeasurer = new Text();
         textMeasurer.setFont(Font.font("System", fontSize));
 
@@ -72,7 +68,6 @@ public class FloatingTextBox extends VBox {
             textArea.setPrefHeight(Math.max(initialHeight, newHeight));
         });
 
-        // ดักการกด Ctrl + Enter
         textArea.setOnKeyPressed(e -> {
             if (e.isControlDown() && e.getCode() == javafx.scene.input.KeyCode.ENTER) {
                 if (onEnterPressed != null) onEnterPressed.run();
@@ -82,7 +77,6 @@ public class FloatingTextBox extends VBox {
         this.getChildren().addAll(moveHandle, textArea);
     }
 
-    // --- ฟังก์ชันส่งค่ากลับไปให้ Canvas เอาไปประทับตรา ---
     public String getText() {
         return textArea.getText();
     }

@@ -6,7 +6,7 @@ import java.util.Map;
 
 import com.easypencil.Widget.ActionButton;
 import com.easypencil.Widget.HotkeySettings;
-import com.easypencil.Widget.ToolButton; // 🌟 เรียกใช้ Widget หน้าต่างตั้งค่า
+import com.easypencil.Widget.ToolButton;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -25,12 +25,15 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 public class ToolBar extends VBox {
 
     private double xOffset = 0;
     private double yOffset = 0;
     private boolean isHorizontal = true;
-    private boolean isDarkMode = true; // 🌟 สถานะธีมปัจจุบัน
+    private boolean isDarkMode = true;
 
     private Label dragHandle;
     private ActionButton rotateBtn;
@@ -61,9 +64,7 @@ public class ToolBar extends VBox {
 
         initDefaultHotkeys();
 
-        dragHandle = new Label("⣿");
-        // dragHandle สไตล์จะถูกตั้งค่าใน buildLayout ตามธีม
-
+        dragHandle = new Label("⣿⣿");
         rotateBtn = new ActionButton("🔄",
                 "-fx-background-color: transparent; -fx-text-fill: #999999; -fx-font-size: 14px; -fx-cursor: hand; -fx-background-radius: 20;",
                 "-fx-background-color: #333333; -fx-text-fill: white; -fx-font-size: 14px; -fx-cursor: hand; -fx-background-radius: 20;"
@@ -150,7 +151,13 @@ public class ToolBar extends VBox {
         saveBtn.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save Image As");
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            fileChooser.setInitialFileName("EasyPencil_" + timestamp + ".png");
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Files", "*.png"));
+            File userDirectory = new File(System.getProperty("user.home"));
+            if (userDirectory.exists()) {
+                fileChooser.setInitialDirectory(userDirectory);
+            }
             File file = fileChooser.showSaveDialog(stage);
             if (file != null) {
                 canvas.saveAsPng(file);
@@ -172,7 +179,6 @@ public class ToolBar extends VBox {
         buildLayout();
     }
 
-    // 🌟 ฟังก์ชันสลับธีม
     public void toggleTheme() {
         this.isDarkMode = !isDarkMode;
         buildLayout();
@@ -226,7 +232,6 @@ public class ToolBar extends VBox {
             dragHandle.setPadding(new Insets(0, 0, 5, 0));
         }
 
-        // 🎨 กำหนด Palette สีตามธีม
         String bgColor = isDarkMode ? "#1a1a1a" : "#ffffff";
         String borderColor = isDarkMode ? "#333333" : "#dddddd";
         String textColor = isDarkMode ? "white" : "#333333";
@@ -242,7 +247,6 @@ public class ToolBar extends VBox {
                 + "-fx-effect: dropshadow(gaussian, " + shadowColor + ", 12, 0, 0, 6);"
         );
 
-        // ปรับสี Text และ Label
         colorLabel.setTextFill(Color.web(textColor));
         colorLabel.setStyle("-fx-font-size: 11px;");
         sizeLabel.setTextFill(Color.web(textColor));
@@ -274,7 +278,6 @@ public class ToolBar extends VBox {
 
     private Separator getStyledSeparator(Orientation orientation) {
         Separator sep = new Separator(orientation);
-        // ปรับความชัดของเส้นคั่นตามธีม
         String sepColor = isDarkMode ? "#ffffff" : "#000000";
         sep.setStyle("-fx-opacity: 0.15; -fx-background-color: " + sepColor + ";");
         return sep;

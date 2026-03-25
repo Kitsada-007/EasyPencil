@@ -42,7 +42,6 @@ public class Main extends Application {
         stage.setY(0);
         stage.show();
 
-        // ใช้ Thread แยกออกมา ไม่ block JavaFX thread
         new Thread(() -> {
             try {
                 Thread.sleep(500);

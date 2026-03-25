@@ -17,7 +17,6 @@ import javafx.stage.StageStyle;
 public class HotkeySettings extends Stage {
 
     public HotkeySettings(ToolBar toolbar) {
-        // 🌟 ตั้งค่าให้หน้าต่างอยู่เหนือหน้าวาดรูปเสมอ (กันค้าง)
         if (toolbar.getScene() != null) {
             this.initOwner(toolbar.getScene().getWindow());
         }
@@ -26,7 +25,6 @@ public class HotkeySettings extends Stage {
         this.initStyle(StageStyle.UTILITY);
         this.setTitle("Settings");
 
-        // 🎨 ดึงสถานะธีมปัจจุบันจาก Toolbar มาใช้จัดสีหน้าต่างนี้
         boolean isDark = toolbar.isDarkMode();
         String bgColor = isDark ? "#1a1a1a" : "#ffffff";
         String textColor = isDark ? "white" : "#333333";
@@ -42,7 +40,6 @@ public class HotkeySettings extends Stage {
         grid.setVgap(12);
         grid.setAlignment(Pos.CENTER);
 
-        // 🌙 1. ส่วนสลับธีม (Theme Toggle)
         Label themeLabel = new Label("Theme:");
         themeLabel.setStyle("-fx-text-fill: " + textColor + "; -fx-font-weight: bold;");
 
@@ -50,21 +47,19 @@ public class HotkeySettings extends Stage {
         themeBtn.setStyle("-fx-background-color: " + btnBase + "; -fx-text-fill: " + textColor + "; -fx-min-width: 120; -fx-cursor: hand;");
 
         themeBtn.setOnAction(e -> {
-            toolbar.toggleTheme(); // 🌟 สั่ง Toolbar หลักเปลี่ยนสี
-            this.close();          // 🌟 ปิดหน้าต่างนี้
-            // 🌟 เปิดหน้าต่างใหม่ทันที เพื่อให้ UI หน้า Setting เปลี่ยนสีตามธีมใหม่ด้วย
+            toolbar.toggleTheme();
+            this.close();
             new HotkeySettings(toolbar).show();
         });
 
         grid.add(themeLabel, 0, 0);
         grid.add(themeBtn, 1, 0);
 
-        // ⌨️ 2. ส่วนตั้งค่า Hotkeys (เริ่มที่ row 1)
         String[] tools = {"PEN", "HIGHLIGHT", "TEXT", "ERASER", "UNDO", "SAVE"};
         int row = 1;
 
         for (String tool : tools) {
-            Label nameLabel = new Label(tool + ":");
+            Label nameLabel = new Label(tool + "\t:\tCTRL +");
             nameLabel.setStyle("-fx-text-fill: " + textColor + ";");
 
             Button keyBtn = new Button(toolbar.getHotkey(tool).toString());
@@ -90,7 +85,6 @@ public class HotkeySettings extends Stage {
             row++;
         }
 
-        // ปุ่ม Done
         Button doneBtn = new Button("Save & Close");
         doneBtn.setStyle("-fx-background-color: #E91E63; -fx-text-fill: white; -fx-padding: 8 25; -fx-background-radius: 20; -fx-cursor: hand;");
         doneBtn.setOnAction(e -> {
@@ -103,7 +97,6 @@ public class HotkeySettings extends Stage {
         root.getChildren().addAll(grid, doneBtn);
 
         Scene scene = new Scene(root);
-        // กด ESC เพื่อปิด
         scene.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ESCAPE) {
                 doneBtn.fire();

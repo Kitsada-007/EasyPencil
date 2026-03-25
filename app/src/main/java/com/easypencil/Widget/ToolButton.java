@@ -35,7 +35,7 @@ public class ToolButton extends ToggleButton {
         try {
             java.net.URL resourceUrl = getClass().getResource("/asset/" + fileName);
             if (resourceUrl == null) {
-                System.out.println("❌ ไม่พบไอคอน: " + fileName);
+                System.out.println("ไม่พบไอคอน: " + fileName);
                 return;
             }
             Image img = new Image(resourceUrl.toExternalForm());
@@ -46,11 +46,10 @@ public class ToolButton extends ToggleButton {
             this.setGraphic(view);
 
         } catch (Exception e) {
-            System.out.println("❌ เกิดข้อผิดพลาดตอนโหลดไอคอน " + fileName + ": " + e.getMessage());
+            System.out.println("เกิดข้อผิดพลาดตอนโหลดไอคอน " + fileName + ": " + e.getMessage());
         }
     }
 
-    // --- เก็บ CSS ไว้ใน Widget นี้เลย ---
     private String normalStyle() {
         return "-fx-background-color: transparent; -fx-text-fill: #cccccc;"
                 + "-fx-background-radius: 20; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 6 12;";
