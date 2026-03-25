@@ -1,28 +1,23 @@
 plugins {
     id 'application'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
 }
-
-def lwjglVersion = '3.3.3'
 
 repositories {
     mavenCentral()
+}
+
+javafx {
+    version = '21'
+    modules = ['javafx.controls', 'javafx.graphics']
 }
 
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    implementation platform("org.lwjgl:lwjgl-bom:${lwjglVersion}")
-
-    implementation 'org.lwjgl:lwjgl'
-    implementation 'org.lwjgl:lwjgl-glfw'
-    implementation 'org.lwjgl:lwjgl-opengl'
-    implementation 'org.lwjgl:lwjgl-stb'
-
-    runtimeOnly 'org.lwjgl:lwjgl::natives-windows'
-    runtimeOnly 'org.lwjgl:lwjgl-glfw::natives-windows'
-    runtimeOnly 'org.lwjgl:lwjgl-opengl::natives-windows'
-    runtimeOnly 'org.lwjgl:lwjgl-stb::natives-windows'
+    implementation 'net.java.dev.jna:jna:5.14.0'
+    implementation 'net.java.dev.jna:jna-platform:5.14.0'
 }
 
 java {
