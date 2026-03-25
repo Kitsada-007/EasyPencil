@@ -30,6 +30,7 @@ public class ToolBar extends VBox {
     private double xOffset = 0;
     private double yOffset = 0;
     private boolean isHorizontal = true;
+    private boolean isDarkMode = true; // เริ่มต้นที่สีดำแบบ Epic Pen
 
     // UI Elements
     private Label dragHandle;

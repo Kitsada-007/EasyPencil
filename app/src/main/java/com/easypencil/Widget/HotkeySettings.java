@@ -14,11 +14,14 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
-// 🌟 ตัวนี้ทำหน้าที่เป็น Widget หน้าต่างตั้งค่า
 public class HotkeySettings extends Stage {
 
     public HotkeySettings(ToolBar toolbar) {
-        // ตั้งค่าหน้าต่าง
+        // 🌟 1. แก้ปัญหาค้าง: ระบุเจ้าของหน้าต่างและสั่งให้ลอยบนสุด (Always on Top)
+        if (toolbar.getScene() != null) {
+            this.initOwner(toolbar.getScene().getWindow());
+        }
+        this.setAlwaysOnTop(true);
         this.initModality(Modality.APPLICATION_MODAL);
         this.initStyle(StageStyle.UTILITY);
         this.setTitle("Hotkey Settings");
@@ -26,6 +29,7 @@ public class HotkeySettings extends Stage {
         VBox root = new VBox(15);
         root.setPadding(new Insets(20));
         root.setAlignment(Pos.CENTER);
+        // ใช้สีดำเข้มตามที่คุณส่งมา
         root.setStyle("-fx-background-color: #1a1a1a; -fx-border-color: #333; -fx-border-width: 1;");
 
         GridPane grid = new GridPane();
@@ -55,6 +59,9 @@ public class HotkeySettings extends Stage {
                     toolbar.setHotkey(tool, newCode); // อัปเดตค่ากลับไปที่ Toolbar
                     keyBtn.setText(newCode.toString());
                     keyBtn.setStyle("-fx-background-color: #333; -fx-text-fill: #E91E63; -fx-min-width: 90;");
+
+                    // 🌟 สำคัญ: ป้องกันไม่ให้ Key หลุดไปทำงานที่หน้า Canvas หลัก
+                    keyEvent.consume();
                     keyBtn.setOnKeyPressed(null);
                 });
             });
@@ -67,16 +74,25 @@ public class HotkeySettings extends Stage {
         // ปุ่มปิด
         Button doneBtn = new Button("Save & Close");
         doneBtn.setStyle("-fx-background-color: #444; -fx-text-fill: white; -fx-padding: 8 25; -fx-background-radius: 20; -fx-cursor: hand;");
-        // ในไฟล์ HotkeySettings.java ตรงปุ่ม Done
+
         doneBtn.setOnAction(e -> {
-            this.close();
             // 🌟 บังคับให้หน้าจอหลักกลับมา Focus อีกครั้ง
             if (toolbar.getScene() != null) {
                 toolbar.getScene().getRoot().requestFocus();
             }
+            this.close();
         });
 
         root.getChildren().addAll(grid, doneBtn);
-        this.setScene(new Scene(root));
+
+        // 🌟 แถม: กดปุ่ม ESC เพื่อปิดหน้าต่างนี้ได้ด้วย
+        Scene scene = new Scene(root);
+        scene.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ESCAPE) {
+                doneBtn.fire();
+            }
+        });
+
+        this.setScene(scene);
     }
 }

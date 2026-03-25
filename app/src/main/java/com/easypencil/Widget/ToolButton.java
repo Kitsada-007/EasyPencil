@@ -4,31 +4,25 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
-// สร้าง Widget ของตัวเอง โดยสืบทอดความสามารถมาจาก ToggleButton
 public class ToolButton extends ToggleButton {
 
     public ToolButton(String text, String iconFileName) {
         super(text);
-        setupStyle();
-        loadIcon(iconFileName);
-    }
-
-    private void setupStyle() {
         this.setStyle(normalStyle());
-        // จัดการ Hover Effect (เอาเมาส์ชี้แล้วสว่าง) ด้วยตัวเอง
+        loadIcon(iconFileName);
+
         this.setOnMouseEntered(e -> {
             if (!this.isSelected()) {
                 this.setStyle(hoverStyle());
-            }
-        });
+        
+            }});
         this.setOnMouseExited(e -> {
             if (!this.isSelected()) {
                 this.setStyle(normalStyle());
-            }
-        });
+        
+            }});
     }
 
-    // 🌟 ฟังก์ชันสำหรับเปิด/ปิด แสงสีชมพู
     public void setActive(boolean isActive) {
         this.setSelected(isActive);
         this.setStyle(isActive ? activeStyle() : normalStyle());
