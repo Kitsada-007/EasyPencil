@@ -3,29 +3,25 @@ package com.easypencil.Widget;
 import javafx.scene.control.Button;
 
 public class ActionButton extends Button {
+    private String customNormal, customHover;
 
-    private String normalCss;
-    private String hoverCss;
-
-    // 🌟 1. คอนสตรัคเตอร์สำหรับปุ่มทั่วไป (ใช้สีพื้นฐาน)
     public ActionButton(String text) {
         super(text);
-        this.normalCss = "-fx-background-color: transparent; -fx-text-fill: #cccccc; -fx-background-radius: 20; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 6 12;";
-        this.hoverCss = "-fx-background-color: #333333; -fx-text-fill: #ffffff; -fx-background-radius: 20; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 6 12;";
-        setupStyle();
+        this.customNormal = "-fx-background-color: transparent; -fx-text-fill: #888; -fx-cursor: hand; -fx-padding: 6 12; -fx-background-radius: 20;";
+        this.customHover = "-fx-background-color: rgba(128,128,128,0.2); -fx-text-fill: white; -fx-cursor: hand; -fx-padding: 6 12; -fx-background-radius: 20;";
+        setup();
     }
 
-    // 🌟 2. คอนสตรัคเตอร์สำหรับปุ่มพิเศษ (ส่งสีมาเองได้ เช่น ปุ่ม Close สีแดง)
-    public ActionButton(String text, String customNormal, String customHover) {
+    public ActionButton(String text, String normal, String hover) {
         super(text);
-        this.normalCss = customNormal;
-        this.hoverCss = customHover;
-        setupStyle();
+        this.customNormal = normal;
+        this.customHover = hover;
+        setup();
     }
 
-    private void setupStyle() {
-        this.setStyle(normalCss);
-        this.setOnMouseEntered(e -> this.setStyle(hoverCss));
-        this.setOnMouseExited(e -> this.setStyle(normalCss));
+    private void setup() {
+        this.setStyle(customNormal);
+        this.setOnMouseEntered(e -> this.setStyle(customHover));
+        this.setOnMouseExited(e -> this.setStyle(customNormal));
     }
 }
