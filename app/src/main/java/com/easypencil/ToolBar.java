@@ -1,229 +1,269 @@
 package com.easypencil;
 
-import java.util.prefs.Preferences;
+import com.easypencil.Widget.ActionButton;
+import com.easypencil.Widget.ToolButton;
+import com.easypencil.Widget.HotkeySettings; // 🌟 เรียกใช้ Widget หน้าต่างตั้งค่า
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Slider;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.layout.GridPane;
+import javafx.scene.control.TextInputControl;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.stage.Modality;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 public class ToolBar extends VBox {
 
-    private final ToggleButton toggleMode;
-    private final ToggleButton eraserBtn;
-    private final Button undoBtn;
-    private final Button clearBtn;
+    private double xOffset = 0;
+    private double yOffset = 0;
+    private boolean isHorizontal = true;
 
-    // ตัวช่วยจัดการการบันทึกค่า Settings แบบถาวร
-    private final Preferences prefs = Preferences.userNodeForPackage(Main.class);
+    // UI Elements
+    private Label dragHandle;
+    private ActionButton rotateBtn;
+    private ToolButton toggleMode;
+    
+    private ToolButton penBtn;
+    private ToolButton highlightBtn;
+    private ToolButton textBtn;
+    private ToolButton eraserBtn;
+    
+    private ActionButton undoBtn;
+    private ActionButton clearBtn;
+    private ActionButton saveBtn;
+    private ActionButton settingsBtn; // 🌟 ปุ่มเฟืองตั้งค่า
+    private ActionButton closeBtn;
+
+    private Label colorLabel;
+    private ColorPicker colorPicker;
+    private Label sizeLabel;
+    private Slider sizeSlider;
+
+    // 🌟 ระบบเก็บข้อมูลคีย์ลัด
+    private final Map<String, KeyCode> hotkeys = new HashMap<>();
 
     public ToolBar(DrawingCanvas canvas, Stage stage) {
         setAlignment(Pos.TOP_LEFT);
         setPickOnBounds(false);
-        setPadding(new Insets(10));
+        setPadding(new Insets(15)); 
 
-        HBox toolbar = new HBox(8);
-        toolbar.setAlignment(Pos.CENTER_LEFT);
-        toolbar.setPadding(new Insets(8, 12, 8, 12));
-        toolbar.setStyle("-fx-background-color: rgba(30,30,30,0.85); -fx-background-radius: 12;");
+        // 1. ตั้งค่าคีย์ลัดเริ่มต้น
+        initDefaultHotkeys();
 
-        // 1. ปุ่ม Toggle Mode
-        toggleMode = new ToggleButton("✏ Draw");
-        toggleMode.setSelected(true);
-        toggleMode.setStyle(selectedStyle());
+        // 2. สร้างส่วนประกอบหลัก
+        dragHandle = new Label("⣿");
+        dragHandle.setTextFill(Color.web("#555555"));
+        dragHandle.setStyle("-fx-font-size: 18px; -fx-cursor: move;");
+        
+        rotateBtn = new ActionButton("🔄", 
+            "-fx-background-color: transparent; -fx-text-fill: #999999; -fx-font-size: 14px; -fx-cursor: hand; -fx-background-radius: 20;",
+            "-fx-background-color: #333333; -fx-text-fill: white; -fx-font-size: 14px; -fx-cursor: hand; -fx-background-radius: 20;"
+        );
+        rotateBtn.setOnAction(e -> { isHorizontal = !isHorizontal; buildLayout(); });
+
+        toggleMode = new ToolButton("✏ Draw", null);
+        toggleMode.setActive(true);
         toggleMode.setOnAction(e -> {
-            Pane root = (Pane) canvas.getParent();
             if (toggleMode.isSelected()) {
                 toggleMode.setText("✏ Draw");
-                toggleMode.setStyle(selectedStyle());
+                toggleMode.setActive(true);
                 canvas.setMouseTransparent(false);
-                root.setStyle("-fx-background-color: rgba(255, 255, 255, 0.01);");
+                Main.setDrawMode(true);
             } else {
                 toggleMode.setText("👁 View");
-                toggleMode.setStyle(normalStyle());
+                toggleMode.setActive(false);
                 canvas.setMouseTransparent(true);
-                root.setStyle("-fx-background-color: transparent;");
+                Main.setDrawMode(false);
             }
         });
 
-        ColorPicker colorPicker = new ColorPicker(Color.RED);
-        colorPicker.setOnAction(e -> canvas.setBrushColor(colorPicker.getValue()));
+        // 3. สร้างปุ่มเครื่องมือ (ToolButtons)
+        penBtn = new ToolButton("Pen", "pencil.png");
+        highlightBtn = new ToolButton("Highlight", "highlighter.png");
+        textBtn = new ToolButton("Text", "text_icon.png");
+        eraserBtn = new ToolButton("Eraser", "eraser.png");
 
-        Slider sizeSlider = new Slider(2, 20, 4);
-        sizeSlider.valueProperty().addListener((obs, oldVal, newVal) -> canvas.setBrushSize(newVal.doubleValue()));
+        setActiveTool(penBtn);
+        canvas.setPenMode();
 
-        // 2. ปุ่ม Eraser
-        eraserBtn = new ToggleButton("🧽 Eraser");
-        eraserBtn.setStyle(normalStyle());
-        eraserBtn.setOnAction(e -> {
-            if (eraserBtn.isSelected()) {
-                eraserBtn.setStyle(selectedStyle());
-                canvas.setEraser(true);
-            } else {
-                eraserBtn.setStyle(normalStyle());
-                canvas.setEraser(false);
-            }
+        penBtn.setOnAction(e -> { setActiveTool(penBtn); canvas.setPenMode(); });
+        highlightBtn.setOnAction(e -> { setActiveTool(highlightBtn); canvas.setHighlightMode(); });
+        textBtn.setOnAction(e -> { setActiveTool(textBtn); canvas.setTextMode(); });
+        eraserBtn.setOnAction(e -> { setActiveTool(eraserBtn); canvas.setEraserMode(); });
+
+        // 4. ส่วนเลือกสีและขนาด
+        colorLabel = new Label("Color");
+        colorLabel.setTextFill(Color.web("#FFFFFF"));
+        colorLabel.setStyle("-fx-font-size: 11px;");
+
+        colorPicker = new ColorPicker(Color.web("#E91E63")); 
+        colorPicker.setStyle("-fx-color-label-visible: false; -fx-background-color: #2b2b2b; -fx-background-radius: 20; -fx-cursor: hand;");
+        colorPicker.setOnAction(e -> {
+            canvas.setBrushColor(colorPicker.getValue());
+            if (canvas.isEraser()) penBtn.fire(); 
+        });
+        canvas.setBrushColor(colorPicker.getValue()); 
+
+        sizeLabel = new Label("Size: 4");
+        sizeLabel.setTextFill(Color.web("#FFFFFF"));
+        sizeLabel.setStyle("-fx-font-size: 11px;");
+        sizeLabel.setPrefWidth(45); 
+
+        sizeSlider = new Slider(1, 100, 4);
+        sizeSlider.setPrefWidth(80);
+        sizeSlider.setStyle("-fx-cursor: hand;");
+        sizeSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            canvas.setBrushSize(newVal.doubleValue());
+            sizeLabel.setText("Size: " + String.format("%.0f", newVal.doubleValue()));
         });
 
-        // 3. ปุ่ม Undo และ Clear
-        undoBtn = new Button("↩ Undo");
-        undoBtn.setStyle(normalStyle());
+        // 5. ปุ่มคำสั่ง (ActionButtons)
+        undoBtn = new ActionButton("↩ Undo");
         undoBtn.setOnAction(e -> canvas.undo());
 
-        clearBtn = new Button("🗑 Clear");
-        clearBtn.setStyle(normalStyle());
+        clearBtn = new ActionButton("🗑 Clear");
         clearBtn.setOnAction(e -> canvas.clearCanvas());
 
-        // --- ปุ่มใหม่: Settings ---
-        Button settingsBtn = new Button("⚙");
-        settingsBtn.setStyle(normalStyle());
-        settingsBtn.setOnAction(e -> openSettingsDialog(stage.getScene()));
+        saveBtn = new ActionButton("💾 Save");
+        saveBtn.setOnAction(e -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Save Image As");
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Files", "*.png"));
+            File file = fileChooser.showSaveDialog(stage);
+            if (file != null) canvas.saveAsPng(file);
+        });
 
-        // ปุ่ม Close
-        Button closeBtn = new Button("✕");
-        closeBtn.setStyle("-fx-background-color: #c0392b; -fx-text-fill: white; -fx-background-radius: 6; -fx-font-size: 13px;");
+        settingsBtn = new ActionButton("⚙");
+        settingsBtn.setOnAction(e -> {
+            HotkeySettings settingsWindow = new HotkeySettings(this);
+            settingsWindow.showAndWait();
+        });
+
+        closeBtn = new ActionButton("✕",
+                "-fx-background-color: transparent; -fx-text-fill: #ff4d4d; -fx-background-radius: 20; -fx-font-size: 14px; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 6 12;",
+                "-fx-background-color: #ff4d4d; -fx-text-fill: white; -fx-background-radius: 20; -fx-font-size: 14px; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 6 12;"
+        );
         closeBtn.setOnAction(e -> stage.close());
 
-        toolbar.getChildren().addAll(
-                toggleMode,
-                new Separator(javafx.geometry.Orientation.VERTICAL),
-                new Label("Color:"), colorPicker,
-                new Label("Size:"), sizeSlider,
-                new Separator(javafx.geometry.Orientation.VERTICAL),
-                eraserBtn, undoBtn, clearBtn,
-                new Separator(javafx.geometry.Orientation.VERTICAL),
-                settingsBtn, closeBtn
-        );
-
-        getChildren().add(toolbar);
+        buildLayout();
     }
 
-    // --- เมธอดผูกคีย์ลัด (ดึงค่าที่ผู้ใช้ตั้งไว้มาใช้) ---
-    public void setupShortcuts(Scene scene) {
-        scene.getAccelerators().clear(); // ล้างคีย์ลัดเก่าออกก่อน
-
-        // แยกจับ Error ทีละปุ่ม ถ้าปุ่มไหนพัง ปุ่มอื่นจะยังทำงานต่อได้ปกติ
-        applyShortcut(scene, "hk_mode", "Ctrl+D", toggleMode);
-        applyShortcut(scene, "hk_eraser", "Ctrl+E", eraserBtn);
-        applyShortcut(scene, "hk_undo", "Ctrl+Z", undoBtn);
-        applyShortcut(scene, "hk_clear", "Delete", clearBtn);
+    private void initDefaultHotkeys() {
+        hotkeys.put("PEN", KeyCode.P);
+        hotkeys.put("HIGHLIGHT", KeyCode.H);
+        hotkeys.put("TEXT", KeyCode.T);
+        hotkeys.put("ERASER", KeyCode.E);
+        hotkeys.put("UNDO", KeyCode.Z);
+        hotkeys.put("SAVE", KeyCode.S);
     }
 
-    private void applyShortcut(Scene scene, String prefKey, String defaultKey, javafx.scene.control.ButtonBase btn) {
-        String keyStr = prefs.get(prefKey, defaultKey);
-        try {
-            // พยายามตั้งค่าคีย์ลัดตามที่ผู้ใช้เซฟไว้
-            scene.getAccelerators().put(KeyCombination.valueOf(keyStr), () -> btn.fire());
-        } catch (Exception ex) {
-            // ถ้าคีย์ลัดที่เซฟไว้เป็นรูปแบบที่ผิดปกติ (บั๊ก) ให้กลับไปใช้ค่าเริ่มต้นแทน
-            System.out.println("❌ รูปแบบคีย์ลัดมีปัญหา: " + keyStr + " -> ใช้ค่าเริ่มต้น: " + defaultKey);
-            scene.getAccelerators().put(KeyCombination.valueOf(defaultKey), () -> btn.fire());
-            prefs.put(prefKey, defaultKey); // บันทึกค่าเริ่มต้นกลับไปทับค่าที่พัง
+    public void setHotkey(String toolName, KeyCode newKey) {
+        hotkeys.put(toolName.toUpperCase(), newKey);
+    }
+
+    public KeyCode getHotkey(String toolName) {
+        return hotkeys.get(toolName.toUpperCase());
+    }
+
+    private void setActiveTool(ToolButton activeBtn) {
+        ToolButton[] tools = {penBtn, highlightBtn, textBtn, eraserBtn};
+        for (ToolButton btn : tools) {
+            btn.setActive(btn == activeBtn);
         }
     }
 
-    // --- หน้าต่างตั้งค่าคีย์ลัด ---
-    private void openSettingsDialog(Scene mainScene) {
-        Stage dialog = new Stage();
+    private void buildLayout() {
+        Pane container;
+        Orientation sepOrientation;
 
-        dialog.initOwner(mainScene.getWindow());
-        dialog.setAlwaysOnTop(true);
+        if (isHorizontal) {
+            HBox box = new HBox(6); 
+            box.setAlignment(Pos.CENTER_LEFT);
+            container = box;
+            sepOrientation = Orientation.VERTICAL;
+            dragHandle.setText("⣿");
+            dragHandle.setPadding(new Insets(0, 5, 0, 0));
+        } else {
+            VBox box = new VBox(6);
+            box.setAlignment(Pos.TOP_CENTER);
+            container = box;
+            sepOrientation = Orientation.HORIZONTAL;
+            dragHandle.setText("⠛");
+            dragHandle.setPadding(new Insets(0, 0, 5, 0));
+        }
 
-        dialog.initModality(Modality.APPLICATION_MODAL);
-        dialog.setTitle("Hotkey Settings");
+        container.setPadding(new Insets(8, 14, 8, 14));
+        container.setStyle(
+                "-fx-background-color: #1a1a1a;"
+                + "-fx-background-radius: 30;"
+                + "-fx-border-color: #333333;"
+                + "-fx-border-radius: 30;"
+                + "-fx-border-width: 1;"
+                + "-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 12, 0, 0, 6);"
+        );
 
-        GridPane grid = new GridPane();
-        grid.setPadding(new Insets(20));
-        grid.setHgap(10);
-        grid.setVgap(15);
-
-        // สร้างช่องกรอกคีย์ลัด
-        TextField modeField = createHotkeyField(prefs.get("hk_mode", "Ctrl+D"));
-        TextField eraserField = createHotkeyField(prefs.get("hk_eraser", "Ctrl+E"));
-        TextField undoField = createHotkeyField(prefs.get("hk_undo", "Ctrl+Z"));
-        TextField clearField = createHotkeyField(prefs.get("hk_clear", "Delete"));
-
-        grid.addRow(0, new Label("Draw / View Mode:"), modeField);
-        grid.addRow(1, new Label("Eraser Mode:"), eraserField);
-        grid.addRow(2, new Label("Undo:"), undoField);
-        grid.addRow(3, new Label("Clear Canvas:"), clearField);
-
-        Button saveBtn = new Button("Save Settings");
-        saveBtn.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white;");
-        saveBtn.setOnAction(e -> {
-            // บันทึกค่าลง Preferences
-            prefs.put("hk_mode", modeField.getText());
-            prefs.put("hk_eraser", eraserField.getText());
-            prefs.put("hk_undo", undoField.getText());
-            prefs.put("hk_clear", clearField.getText());
-
-            // อัปเดตคีย์ลัดในโปรแกรมทันที
-            setupShortcuts(mainScene);
-            dialog.close();
+        container.setOnMousePressed(e -> {
+            xOffset = e.getSceneX() - this.getLayoutX();
+            yOffset = e.getSceneY() - this.getLayoutY();
+        });
+        container.setOnMouseDragged(e -> {
+            this.setLayoutX(e.getSceneX() - xOffset);
+            this.setLayoutY(e.getSceneY() - yOffset);
         });
 
-        VBox layout = new VBox(20, grid, saveBtn);
-        layout.setAlignment(Pos.CENTER);
-        layout.setPadding(new Insets(10));
+        container.getChildren().addAll(
+                dragHandle, rotateBtn, getStyledSeparator(sepOrientation),
+                toggleMode, getStyledSeparator(sepOrientation),
+                penBtn, highlightBtn, textBtn, eraserBtn, getStyledSeparator(sepOrientation),
+                colorLabel, colorPicker, sizeLabel, sizeSlider, getStyledSeparator(sepOrientation),
+                undoBtn, clearBtn, saveBtn, settingsBtn, getStyledSeparator(sepOrientation),
+                closeBtn
+        );
 
-        dialog.setScene(new Scene(layout, 300, 250));
-        dialog.showAndWait();
+        this.getChildren().clear();
+        this.getChildren().add(container);
     }
 
-    // --- ตัวช่วยสร้างช่องดักจับการกดปุ่มบนคีย์บอร์ด ---
-    // --- ตัวช่วยสร้างช่องดักจับการกดปุ่มบนคีย์บอร์ด ---
-    private TextField createHotkeyField(String currentKey) {
-        TextField field = new TextField(currentKey);
-        field.setEditable(false); // ห้ามพิมพ์เอง
-        field.setStyle("-fx-background-color: #eee; -fx-cursor: hand;");
+    private Separator getStyledSeparator(Orientation orientation) {
+        Separator sep = new Separator(orientation);
+        sep.setStyle("-fx-opacity: 0.15; -fx-background-color: #ffffff;"); 
+        return sep;
+    }
 
-        field.setOnKeyPressed(e -> {
-            // ถ้ายกดแค่ปุ่ม Ctrl, Shift, Alt ค้างไว้ ให้รอจนกว่าจะกดปุ่มหลัก
-            if (e.getCode().isModifierKey()) {
-                return;
-            }
+    public void setupShortcuts(Scene scene) {
+        scene.setOnKeyPressed(e -> {
+            // ถ้ากำลังพิมพ์ในกล่องข้อความ ให้หยุดคีย์ลัด
+            if (e.getTarget() instanceof TextInputControl) return;
+            
+            // ถ้าหน้าต่างหลัก (Scene) ไม่ได้ถูก Focus อยู่ ก็ไม่ต้องทำงาน
+            if (!scene.getWindow().isFocused()) return;
 
-            // ป้องกันปุ่มแปลกๆ ที่ JavaFX ไม่รู้จัก (เช่น ปุ่มเพิ่มลดเสียงบนคีย์บอร์ด)
-            if (e.getCode().isFunctionKey() || e.getCode().isLetterKey() || e.getCode().isDigitKey()
-                    || e.getCode() == javafx.scene.input.KeyCode.DELETE) {
-
-                String combo = "";
-                if (e.isControlDown()) {
-                    combo += "Ctrl+";
-                }
-                if (e.isShiftDown()) {
-                    combo += "Shift+";
-                }
-                if (e.isAltDown()) {
-                    combo += "Alt+";
-                }
-
-                combo += e.getCode().name(); // ใช้ .name() จะชัวร์ที่สุดสำหรับ JavaFX
-                field.setText(combo);
+            KeyCode code = e.getCode();
+            
+            // ใช้ if-else เช็คปุ่มจาก Map เหมือนเดิม
+            if (code == hotkeys.get("PEN")) penBtn.fire();
+            else if (code == hotkeys.get("HIGHLIGHT")) highlightBtn.fire();
+            else if (code == hotkeys.get("TEXT")) textBtn.fire();
+            else if (code == hotkeys.get("ERASER")) eraserBtn.fire();
+            
+            if (e.isControlDown()) {
+                if (code == hotkeys.get("UNDO")) undoBtn.fire();
+                else if (code == hotkeys.get("SAVE")) saveBtn.fire();
             }
         });
-        return field;
-    }
-
-    private String selectedStyle() {
-        return "-fx-background-color: #3498db; -fx-text-fill: white; -fx-background-radius: 6; -fx-font-size: 13px;";
-    }
-
-    private String normalStyle() {
-        return "-fx-background-color: #555; -fx-text-fill: white; -fx-background-radius: 6; -fx-font-size: 13px;";
     }
 }
