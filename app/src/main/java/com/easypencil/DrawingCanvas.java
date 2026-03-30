@@ -332,8 +332,11 @@ public class DrawingCanvas extends Pane {
                 int iH = (int) screenH;
                 int rw = (int)(iW / zoomLevel);
                 int rh = (int)(iH / zoomLevel);
-                int rx = (iW - rw) / 2;
-                int ry = (iH - rh) / 2;
+
+                // ซูมเข้าที่ตำแหน่ง mouse cursor ปัจจุบัน
+                java.awt.Point mouse = java.awt.MouseInfo.getPointerInfo().getLocation();
+                int rx = Math.max(0, Math.min(iW - rw, mouse.x - rw / 2));
+                int ry = Math.max(0, Math.min(iH - rh, mouse.y - rh / 2));
 
                 Robot robot = new Robot();
                 BufferedImage full    = robot.createScreenCapture(new Rectangle(iW, iH));
