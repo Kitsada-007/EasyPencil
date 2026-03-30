@@ -1,7 +1,11 @@
 plugins {
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'io.github.goooler.shadow' version '8.1.8'
 }
+
+group = 'com.easypencil.Main'
+version = '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -27,9 +31,122 @@ java {
 }
 
 application {
-    mainClass = 'com.easypencil.Main'
+    mainClass = 'com.easypencil.AppLauncher'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+// ---------------------------------------------------------
+// Shadow JAR — รวม dependency ทั้งหมด (รวม JavaFX natives) เป็น JAR เดียว
+// ---------------------------------------------------------
+shadowJar {
+    mergeServiceFiles()
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+    manifest {
+        attributes 'Main-Class': 'com.easypencil.AppLauncher'
+    }
+}
+
+// ---------------------------------------------------------
+// Task 1: createApp
+//   สร้างโฟลเดอร์ EasyPencil/ ที่มี .exe + JRE ในตัว (ไม่ต้องใช้ WiX)
+//   รัน   : ./gradlew createApp
+//   ผลลัพธ์: build/jpackage/EasyPencil/EasyPencil.exe
+//   วิธีแชร์: zip โฟลเดอร์ EasyPencil/ ทั้งหมดให้ผู้ใช้
+// ---------------------------------------------------------
+tasks.register('createApp', Exec) {
+    dependsOn tasks.named('shadowJar')
+    group = 'distribution'
+    description = 'Build standalone app-image folder (EasyPencil.exe + bundled JRE, no WiX needed)'
+
+    def outputDir  = file("${buildDir}/jpackage")
+    def shadowTask = tasks.named('shadowJar').get()
+    def iconFile   = file("${projectDir}/src/main/resources/asset/logo_board.ico")
+
+    doFirst {
+        outputDir.deleteDir()
+        println ">>> Building EasyPencil (app-image)..."
+        println "    JAR : ${shadowTask.archiveFileName.get()}"
+        println "    Icon: ${iconFile.exists() ? iconFile.absolutePath : '(not found, skipped)'}"
+        println "    Out : ${outputDir.absolutePath}"
+    }
+
+    def cmdArgs = [
+        'jpackage',
+        '--type',         'app-image',
+        '--dest',         outputDir.absolutePath,
+        '--name',         'EasyPencil',
+        '--app-version',  '1.0.0',
+        '--vendor',       'EasyPencil',
+        '--main-class',   'com.easypencil.AppLauncher',
+        '--main-jar',     shadowTask.archiveFileName.get(),
+        '--input',        shadowTask.destinationDirectory.get().asFile.absolutePath,
+        '--java-options', '-Dfile.encoding=UTF-8',
+        '--java-options', '-Djavafx.verbose=false',
+    ]
+    if (iconFile.exists()) {
+        cmdArgs += ['--icon', iconFile.absolutePath]
+    }
+    commandLine cmdArgs
+
+    doLast {
+        println ">>> Done! Run: ${outputDir.absolutePath}\\EasyPencil\\EasyPencil.exe"
+        println "    Zip the EasyPencil/ folder and share it with users."
+    }
+}
+
+// ---------------------------------------------------------
+// Task 2: createInstaller
+//   สร้างไฟล์ EasyPencil-1.0.0.exe installer ไฟล์เดียว
+//   ต้องติดตั้ง WiX Toolset v3 ก่อน:
+//     https://github.com/wixtoolset/wix3/releases  (ดาวน์โหลด wix314.exe)
+//   รัน   : ./gradlew createInstaller
+//   ผลลัพธ์: build/installer/EasyPencil-1.0.0.exe  (แชร์ไฟล์นี้ไฟล์เดียวได้เลย)
+// ---------------------------------------------------------
+tasks.register('createInstaller', Exec) {
+    dependsOn tasks.named('shadowJar')
+    group = 'distribution'
+    description = 'Build a single EasyPencil-1.0.0.exe installer (requires WiX Toolset v3)'
+
+    def outputDir  = file("${buildDir}/installer")
+    def shadowTask = tasks.named('shadowJar').get()
+    def iconFile   = file("${projectDir}/src/main/resources/asset/logo_board.ico")
+
+    doFirst {
+        outputDir.deleteDir()
+        println ">>> Building EasyPencil installer (.exe)..."
+        println "    Requires WiX Toolset v3 — https://github.com/wixtoolset/wix3/releases"
+    }
+
+    def cmdArgs = [
+        'jpackage',
+        '--type',         'exe',
+        '--dest',         outputDir.absolutePath,
+        '--name',         'EasyPencil',
+        '--app-version',  '1.0.0',
+        '--vendor',       'EasyPencil',
+        '--description',  'EasyPencil Drawing Application',
+        '--main-class',   'com.easypencil.AppLauncher',
+        '--main-jar',     shadowTask.archiveFileName.get(),
+        '--input',        shadowTask.destinationDirectory.get().asFile.absolutePath,
+        '--java-options', '-Dfile.encoding=UTF-8',
+        '--java-options', '-Djavafx.verbose=false',
+        '--win-dir-chooser',
+        '--win-shortcut',
+        '--win-menu',
+        '--win-per-user-install',
+    ]
+    if (iconFile.exists()) {
+        cmdArgs += ['--icon', iconFile.absolutePath]
+    }
+    commandLine cmdArgs
+
+    doLast {
+        println ">>> Done! Installer: ${outputDir.absolutePath}\\EasyPencil-1.0.0.exe"
+        println "    Share this single file with users — no Java install required."
+    }
 }

@@ -16,6 +16,16 @@ set PATH=%JAVA_HOME%\bin;%PATH%
 ```
 gradlew clean run
 ```
+# Build 
+Windows: 
+```
+gradlew createExe
+```
+Mac/Linux: 
+```
+gradlew createExe
+```
+
 
 How to Run
 New Terminal -> cd  into EasyPencil   type gradlew clean run!!!
