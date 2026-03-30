@@ -94,22 +94,32 @@ public class ToolBar extends VBox {
         });
 
         toggleMode = new ToolButton("✏ Draw", null);
+        toggleMode.setActive(true);   // เริ่มต้น = Draw mode (selected + active style)
+
         toggleMode.setOnAction(e -> {
+            boolean isDraw = toggleMode.isSelected(); // true=Draw, false=View  (state AFTER click)
             Pane rootPane = (Pane) canvas.getParent();
-            if (toggleMode.isSelected()) {
+
+            if (isDraw) {
+                // ── Draw mode ─────────────────────────────────────────────────
+                // background rgba(0.01) → pixel alpha > 0 → Win32 ส่ง mouse events มาที่ window
+                // JavaFX hit-test กระจาย event ไปยัง canvas หรือ toolbar ตาม position
                 toggleMode.setText("✏ Draw");
-                toggleMode.setActive(true);
                 canvas.setMouseTransparent(false);
-                if (rootPane != null) {
+                Main.setDrawMode(true);   // ensure WS_EX_TRANSPARENT ถูกลบออก
+                if (rootPane != null)
                     rootPane.setStyle("-fx-background-color: rgba(255, 255, 255, 0.01);");
-                }
             } else {
+                // ── View mode ─────────────────────────────────────────────────
+                // background transparent (alpha=0) → Win32 pixel-alpha hit-test ล้มเหลว
+                // → mouse events ผ่าน canvas ไปถึง desktop ด้านหลัง
+                // Toolbar ยังคลิกได้เพราะมี background สีทึบ (alpha > 0)
+                // *** ไม่ใช้ Main.setDrawMode(false) *** เพราะ WS_EX_TRANSPARENT จะทำให้
+                // toolbar คลิกไม่ได้ด้วย (ใช้ได้เฉพาะ multi-stage เท่านั้น)
                 toggleMode.setText("👁 View");
-                toggleMode.setActive(false);
                 canvas.setMouseTransparent(true);
-                if (rootPane != null) {
+                if (rootPane != null)
                     rootPane.setStyle("-fx-background-color: transparent;");
-                }
             }
         });
 
@@ -191,7 +201,7 @@ public class ToolBar extends VBox {
                 "-fx-background-color: transparent; -fx-text-fill: #ff4d4d; -fx-background-radius: 20; -fx-font-size: 14px; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 6 12;",
                 "-fx-background-color: #ff4d4d; -fx-text-fill: white; -fx-background-radius: 20; -fx-font-size: 14px; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 6 12;"
         );
-        closeBtn.setOnAction(e -> stage.close());
+        closeBtn.setOnAction(e -> javafx.application.Platform.exit());
 
         // ── Zoom controls ─────────────────────────────────────────────────
         zoomOutBtn   = new ActionButton("🔍-");
