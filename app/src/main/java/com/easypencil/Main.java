@@ -24,6 +24,7 @@ public class Main extends Application {
         DrawingCanvas canvas = new DrawingCanvas();
         ToolBar toolbar = new ToolBar(canvas, stage);
 
+        // Canvas + Toolbar อยู่ใน Stage เดียวกัน เพื่อไม่ให้เกิด z-order conflict
         Pane root = new Pane(canvas, toolbar);
         root.setStyle("-fx-background-color: rgba(255, 255, 255, 0.01);");
 
@@ -42,11 +43,9 @@ public class Main extends Application {
         stage.setY(0);
         stage.show();
 
+        // หา HWND แล้ว set draw mode ครั้งแรก (ลบ WS_EX_TRANSPARENT)
         new Thread(() -> {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException ex) {
-            }
+            try { Thread.sleep(500); } catch (InterruptedException ex) { }
             Platform.runLater(() -> {
                 hwnd = User32.INSTANCE.FindWindow(null, "EasyPencil");
                 if (hwnd != null) {
@@ -59,10 +58,15 @@ public class Main extends Application {
         }).start();
     }
 
+    /**
+     * Draw mode  = true  → ลบ WS_EX_TRANSPARENT → window รับ mouse events
+     * View mode  = false → เพิ่ม WS_EX_TRANSPARENT → window click-through ทั้งหมด
+     *
+     * หมายเหตุ: setDrawMode(false) ใช้ได้เฉพาะถ้า Toolbar อยู่ใน Stage แยก
+     * ในแบบ Single-Stage ให้ใช้ background-color transparent แทน (ดู ToolBar.java)
+     */
     public static void setDrawMode(boolean drawMode) {
-        if (hwnd == null) {
-            return;
-        }
+        if (hwnd == null) return;
         int exStyle = User32.INSTANCE.GetWindowLong(hwnd, WinUser.GWL_EXSTYLE);
         if (drawMode) {
             User32.INSTANCE.SetWindowLong(hwnd, WinUser.GWL_EXSTYLE,
@@ -71,7 +75,6 @@ public class Main extends Application {
             User32.INSTANCE.SetWindowLong(hwnd, WinUser.GWL_EXSTYLE,
                     exStyle | WinUser.WS_EX_LAYERED | WinUser.WS_EX_TRANSPARENT);
         }
-        System.out.println("Draw mode: " + drawMode + " exStyle: " + exStyle);
     }
 
     public static void main(String[] args) {

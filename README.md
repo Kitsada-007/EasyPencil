@@ -27,5 +27,7 @@ gradlew createExe
 ```
 
 
-How to Run
-New Terminal -> cd  into EasyPencil   type gradlew clean run!!!
+# Build (/build/jpackage/EasyPencil/.exe)
+```
+gradlew packageExe
+```
